@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
@@ -13,7 +14,7 @@
             background: #121212;
             color: white;
         }
-        
+
         #loader {
             position: fixed;
             top: 0;
@@ -28,12 +29,12 @@
             z-index: 1000;
             transition: opacity 0.5s;
         }
-        
+
         #loader.hidden {
             opacity: 0;
             pointer-events: none;
         }
-        
+
         .spinner {
             width: 50px;
             height: 50px;
@@ -43,11 +44,13 @@
             animation: spin 1s ease-in-out infinite;
             margin-bottom: 20px;
         }
-        
+
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
-        
+
         #progress-container {
             width: 80%;
             max-width: 300px;
@@ -57,7 +60,7 @@
             margin-top: 20px;
             overflow: hidden;
         }
-        
+
         #progress-bar {
             height: 100%;
             width: 0;
@@ -65,7 +68,7 @@
             border-radius: 4px;
             transition: width 0.3s;
         }
-        
+
         #controls {
             position: fixed;
             bottom: 24px;
@@ -80,7 +83,7 @@
             backdrop-filter: blur(10px);
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         }
-        
+
         #controls button {
             padding: 10px 20px;
             font-size: 16px;
@@ -92,25 +95,25 @@
             transition: all 0.3s;
             min-width: 120px;
         }
-        
+
         #controls button:hover {
             background: #0d8aee;
             transform: translateY(-2px);
         }
-        
+
         #controls button:active {
             transform: translateY(1px);
         }
-        
+
         #controls button:disabled {
             background: #666;
             cursor: not-allowed;
         }
-        
+
         .hidden {
             display: none !important;
         }
-        
+
         #video-selection {
             position: fixed;
             top: 50%;
@@ -126,18 +129,18 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(10px);
         }
-        
+
         #video-selection.hidden {
             display: none;
         }
-        
+
         #video-selection h2 {
             margin-top: 0;
             margin-bottom: 20px;
             font-size: 22px;
             color: #2196F3;
         }
-        
+
         .video-option {
             display: block;
             width: 100%;
@@ -152,16 +155,16 @@
             transition: all 0.3s;
             text-align: center;
         }
-        
+
         .video-option:hover {
             background: #444;
             transform: translateY(-3px);
         }
-        
+
         .video-option:active {
             transform: translateY(1px);
         }
-        
+
         #close-selection {
             display: block;
             width: 100%;
@@ -174,19 +177,19 @@
             font-size: 14px;
             cursor: pointer;
         }
-        
+
         #close-selection:hover {
             background: rgba(255, 255, 255, 0.05);
         }
-        
+
         #real-camera-video {
             display: none;
         }
-        
+
         #screenshot-canvas {
             display: none;
         }
-        
+
         .notification {
             position: fixed;
             top: 20px;
@@ -201,14 +204,29 @@
             text-align: center;
             max-width: 90%;
         }
-        
+
         @keyframes fadeInOut {
-            0% { opacity: 0; top: 0; }
-            10% { opacity: 1; top: 20px; }
-            90% { opacity: 1; top: 20px; }
-            100% { opacity: 0; top: 0; }
+            0% {
+                opacity: 0;
+                top: 0;
+            }
+
+            10% {
+                opacity: 1;
+                top: 20px;
+            }
+
+            90% {
+                opacity: 1;
+                top: 20px;
+            }
+
+            100% {
+                opacity: 0;
+                top: 0;
+            }
         }
-        
+
         #video-preview-modal {
             position: fixed;
             top: 0;
@@ -222,19 +240,19 @@
             align-items: center;
             z-index: 2000;
         }
-        
+
         #video-preview {
             max-width: 90%;
             max-height: 70vh;
             border-radius: 10px;
         }
-        
+
         .preview-controls {
             margin-top: 20px;
             display: flex;
             gap: 10px;
         }
-        
+
         .preview-controls button {
             padding: 10px 20px;
             background: #2196F3;
@@ -243,7 +261,7 @@
             border-radius: 30px;
             cursor: pointer;
         }
-        
+
         .safari-warning {
             background: #ff9800;
             color: #333;
@@ -256,6 +274,7 @@
         }
     </style>
 </head>
+
 <body>
     <div id="loader">
         <div class="spinner"></div>
@@ -265,7 +284,7 @@
             <div id="progress-bar"></div>
         </div>
     </div>
-    
+
     <div id="video-selection" class="hidden">
         <h2>Chọn video để phát</h2>
         <button class="video-option" id="video1-option">Video Sapporo 1</button>
@@ -273,51 +292,27 @@
         <button id="close-selection">Đóng</button>
     </div>
 
-    <a-scene
-        mindar-image="imageTargetSrc: https://cdn.jsdelivr.net/gh/HaiquangPham14/TestARGame2@main/targets.mind"
-        color-space="sRGB"
-        renderer="colorManagement: true, physicallyCorrectLights"
-        vr-mode-ui="enabled: false"
-        device-orientation-permission-ui="enabled: false"
-    >
+    <a-scene mindar-image="imageTargetSrc: https://cdn.jsdelivr.net/gh/HaiquangPham14/TestARGame2@main/targets.mind"
+        color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false"
+        device-orientation-permission-ui="enabled: false">
         <a-assets>
-            <video
-                id="video1"
-                src="https://cdn.jsdelivr.net/gh/HaiquangPham14/TestARGame2@main/Sapporo1.mp4"
-                preload="auto"
-                crossorigin="anonymous"
-                webkit-playsinline
-                playsinline
-                loop
-            ></video>
-            <video
-                id="video2"
-                src="https://cdn.jsdelivr.net/gh/HaiquangPham14/TestARGame2@main/Sapporo%20Premium%20Beer%20-%203-STEP%20POURING%2C%20THE%20EXCELLENCY%20OF%20SMOOTHNESS.mp4"
-                preload="auto"
-                crossorigin="anonymous"
-                webkit-playsinline
-                playsinline
-                loop
-            ></video>
+            <video id="video1" src="https://cdn.jsdelivr.net/gh/HaiquangPham14/TestARGame2@main/Sapporo1.mp4"
+                preload="auto" crossorigin="anonymous" webkit-playsinline playsinline loop></video>
+            <video id="video2" src="https://cdn.jsdelivr.net/gh/HaiquangPham14/TestARGame2@main/Sapporo2.mp4"
+                preload="auto" crossorigin="anonymous" webkit-playsinline playsinline loop></video>
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-entity id="target" mindar-image-target="targetIndex: 0">
-            <a-video
-                id="video-plane"
-                width="1"
-                height="0.5625"
-                position="0 0 0"
-                rotation="0 0 0"
-                visible="false"
-            ></a-video>
+            <a-video id="video-plane" width="1" height="0.5625" position="0 0 0" rotation="0 0 0"
+                visible="false"></a-video>
         </a-entity>
     </a-scene>
 
     <video id="real-camera-video" autoplay playsinline class="hidden"></video>
     <canvas id="screenshot-canvas" class="hidden"></canvas>
-    
+
     <div id="video-preview-modal" class="hidden">
         <video id="video-preview" controls></video>
         <div class="preview-controls">
@@ -325,7 +320,7 @@
             <button id="close-preview-btn">Đóng</button>
         </div>
         <div id="safari-help" class="safari-warning hidden">
-            <strong>Lưu ý khi dùng Safari:</strong> 
+            <strong>Lưu ý khi dùng Safari:</strong>
             <p>Video đã tải có thể tìm thấy trong thư mục "Tải xuống" của iCloud</p>
             <p>Mở Safari → Nhấn vào biểu tượng tải xuống → Chọn "Xem tải xuống"</p>
         </div>
@@ -355,7 +350,7 @@
         function updateProgress(progress, text) {
             const progressBar = document.getElementById('progress-bar');
             const loadingText = document.getElementById('loading-text');
-            
+
             if (progressBar) progressBar.style.width = `${progress}%`;
             if (loadingText) loadingText.textContent = text;
         }
@@ -364,7 +359,7 @@
         async function initializeRealCamera() {
             try {
                 updateProgress(20, "Đang kết nối camera...");
-                
+
                 const video = document.getElementById("real-camera-video");
                 realCameraStream = await navigator.mediaDevices.getUserMedia({
                     video: {
@@ -375,7 +370,7 @@
                 });
                 video.srcObject = realCameraStream;
                 await video.play();
-                
+
                 updateProgress(40, "Camera đã sẵn sàng");
                 return true;
             } catch (error) {
@@ -388,34 +383,34 @@
         function setupARVideo() {
             const target = document.querySelector("#target");
             const videoPlane = document.getElementById("video-plane");
-            
+
             if (!target) {
                 console.error("Không tìm thấy target");
                 return;
             }
-            
+
             // Sự kiện khi nhận diện được hình ảnh
             target.addEventListener("targetFound", () => {
                 isTargetVisible = true;
                 document.getElementById("video-selection").classList.remove("hidden");
             });
-            
+
             // Sự kiện khi mất hình ảnh
             target.addEventListener("targetLost", () => {
                 isTargetVisible = false;
-                
+
                 // Dừng video hiện tại nếu có
                 if (currentVideoElement) {
                     currentVideoElement.pause();
                     currentVideoElement.currentTime = 0;
                 }
-                
+
                 // Reset lựa chọn video
                 selectedVideoId = null;
-                
+
                 // Ẩn video plane
                 videoPlane.setAttribute("visible", "false");
-                
+
                 // Ẩn menu chọn video
                 document.getElementById("video-selection").classList.add("hidden");
             });
@@ -429,34 +424,34 @@
                 document.getElementById("video-selection").classList.add("hidden");
                 return;
             }
-            
+
             const videoElement = document.getElementById(videoId);
             const videoPlane = document.getElementById("video-plane");
-            
+
             if (!videoElement) {
                 console.error("Không tìm thấy video:", videoId);
                 return;
             }
-            
+
             // Dừng video hiện tại nếu có
             if (currentVideoElement) {
                 currentVideoElement.pause();
                 currentVideoElement.currentTime = 0;
             }
-            
+
             // Đặt video đã chọn
             selectedVideoId = videoId;
             currentVideoElement = videoElement;
-            
+
             // Cập nhật video plane
             videoPlane.setAttribute("src", `#${videoId}`);
             videoPlane.setAttribute("visible", "true");
-            
+
             // Thử phát video
             videoElement.play().catch(e => {
                 console.log("Cần tương tác để phát video:", e);
             });
-            
+
             // Ẩn menu chọn video
             document.getElementById("video-selection").classList.add("hidden");
         }
@@ -467,29 +462,29 @@
             arCanvas = document.querySelector("canvas.a-canvas");
             const realCameraVideo = document.getElementById("real-camera-video");
             const screenshotCanvas = document.getElementById("screenshot-canvas");
-            
+
             if (!arCanvas || !realCameraVideo || !screenshotCanvas) {
                 showNotification("Không tìm thấy thành phần cần thiết!");
                 return;
             }
-            
+
             // Cấu hình kích thước canvas
             screenshotCanvas.width = arCanvas.width;
             screenshotCanvas.height = arCanvas.height;
             const ctx = screenshotCanvas.getContext("2d");
-            
+
             // Vẽ video camera thực tế làm nền
             ctx.drawImage(realCameraVideo, 0, 0, screenshotCanvas.width, screenshotCanvas.height);
-            
+
             // Vẽ nội dung AR (bao gồm video đang phát) lên trên
             ctx.drawImage(arCanvas, 0, 0, screenshotCanvas.width, screenshotCanvas.height);
-            
+
             // Tạo và tải ảnh
             const link = document.createElement("a");
             link.download = `sapporo-ar-${Date.now()}.png`;
             link.href = screenshotCanvas.toDataURL("image/png");
             link.click();
-            
+
             // Hiển thị thông báo thành công
             showNotification("Đã chụp ảnh thành công!");
         }
@@ -500,12 +495,12 @@
             if (existingNotification) {
                 existingNotification.remove();
             }
-            
+
             const notification = document.createElement("div");
             notification.className = "notification";
             notification.textContent = message;
             document.body.appendChild(notification);
-            
+
             setTimeout(() => {
                 notification.remove();
             }, 3000);
@@ -517,45 +512,45 @@
                 recordedChunks = [];
                 const arCanvas = document.querySelector("canvas.a-canvas");
                 const realCameraVideo = document.getElementById("real-camera-video");
-                
+
                 if (!arCanvas || !realCameraVideo) {
                     showNotification("Thiếu thành phần để quay video");
                     return;
                 }
-                
+
                 // Tạo canvas tổng hợp
                 combinedCanvas = document.createElement("canvas");
                 combinedCanvas.width = arCanvas.width;
                 combinedCanvas.height = arCanvas.height;
                 ctx = combinedCanvas.getContext("2d");
-                
+
                 // Tạo stream từ canvas tổng hợp
                 const stream = combinedCanvas.captureStream(30);
-                
+
                 // Xử lý âm thanh
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 dest = audioCtx.createMediaStreamDestination();
-                
+
                 // Kết nối âm thanh video AR nếu có
                 if (currentVideoElement) {
                     const videoSource = audioCtx.createMediaElementSource(currentVideoElement);
-                    videoSource.connect(audioCtx.destination); 
+                    videoSource.connect(audioCtx.destination);
                     videoSource.connect(dest);
                 }
-                
+
                 // Âm thanh microphone
                 const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 const micSource = audioCtx.createMediaStreamSource(micStream);
                 micSource.connect(dest);
-                
+
                 // Kết hợp audio
                 dest.stream.getAudioTracks().forEach((track) => stream.addTrack(track));
-                
+
                 // Vẽ khung hình
                 isDrawing = true;
                 function drawFrame() {
                     if (!isDrawing) return;
-                    
+
                     // Đảm bảo camera không bị đứng
                     if (!realCameraVideo.paused) {
                         ctx.clearRect(0, 0, combinedCanvas.width, combinedCanvas.height);
@@ -565,13 +560,13 @@
                     requestAnimationFrame(drawFrame);
                 }
                 drawFrame();
-                
+
                 // Xác định MIME type được hỗ trợ
                 const supportedTypes = [
                     'video/mp4;codecs=avc1,mp4a',
                     'video/mp4'
                 ];
-                
+
                 let mimeType = '';
                 for (const type of supportedTypes) {
                     if (MediaRecorder.isTypeSupported(type)) {
@@ -579,45 +574,45 @@
                         break;
                     }
                 }
-                
+
                 if (!mimeType) {
                     showNotification("Trình duyệt không hỗ trợ ghi video");
                     return;
                 }
-                
+
                 // Thiết lập recorder
                 const options = {
                     mimeType: mimeType,
                     videoBitsPerSecond: 2500000,
                     audioBitsPerSecond: 128000
                 };
-                
+
                 mediaRecorder = new MediaRecorder(stream, options);
-                
+
                 mediaRecorder.ondataavailable = (e) => {
                     if (e.data.size > 0) {
                         recordedChunks.push(e.data);
                     }
                 };
-                
+
                 mediaRecorder.onstop = () => {
                     isDrawing = false;
-                    
+
                     let fileExtension = 'mp4';
                     if (mimeType.includes('mp4')) {
                         fileExtension = 'mp4';
                     }
-                    
+
                     recordedVideoBlob = new Blob(recordedChunks, { type: mimeType });
-                    
+
                     // Hiển thị preview video
                     showVideoPreview(recordedVideoBlob);
                 };
-                
+
                 mediaRecorder.start();
                 document.getElementById("record-button").classList.add("hidden");
                 document.getElementById("stop-button").classList.remove("hidden");
-                
+
                 showNotification("Đang quay video...");
             } catch (error) {
                 console.error("Lỗi khi quay video:", error);
@@ -630,16 +625,16 @@
             const previewModal = document.getElementById("video-preview-modal");
             const videoPreview = document.getElementById("video-preview");
             const safariHelp = document.getElementById("safari-help");
-            
+
             // Hiển thị hướng dẫn Safari nếu cần
             if (isSafari) {
                 safariHelp.classList.remove("hidden");
             }
-            
+
             // Tạo URL cho video
             const videoURL = URL.createObjectURL(blob);
             videoPreview.src = videoURL;
-            
+
             // Hiển thị modal
             previewModal.classList.remove("hidden");
         }
@@ -647,33 +642,33 @@
         // === TẢI VIDEO ===
         function downloadVideo() {
             if (!recordedVideoBlob) return;
-            
+
             const fileExtension = 'mp4';
             const filename = `sapporo-ar-recording-${Date.now()}.${fileExtension}`;
             const url = URL.createObjectURL(recordedVideoBlob);
-            
+
             // Tạo link tải
             const a = document.createElement("a");
             a.href = url;
             a.download = filename;
-            
+
             // Safari cần thêm vào DOM để hoạt động
             document.body.appendChild(a);
             a.click();
-            
+
             // Dọn dẹp sau khi tải
             setTimeout(() => {
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             }, 100);
-            
+
             // Hiển thị hướng dẫn cho Safari
             if (isSafari) {
                 showNotification("Video đang tải xuống. Vui lòng kiểm tra thư mục Tải xuống của iCloud");
             } else {
                 showNotification("Đang tải video xuống...");
             }
-            
+
             // Đóng preview
             document.getElementById("video-preview-modal").classList.add("hidden");
         }
@@ -697,17 +692,17 @@
             document.getElementById("close-preview-btn").addEventListener("click", () => {
                 document.getElementById("video-preview-modal").classList.add("hidden");
             });
-            
+
             // Thêm sự kiện chọn video
             document.getElementById("video1-option").addEventListener("click", () => selectVideo("video1"));
             document.getElementById("video2-option").addEventListener("click", () => selectVideo("video2"));
             document.getElementById("close-selection").addEventListener("click", () => {
                 document.getElementById("video-selection").classList.add("hidden");
             });
-            
+
             // Cập nhật tiến trình
             updateProgress(10, "Đang khởi tạo...");
-            
+
             try {
                 // Khởi tạo camera
                 const cameraReady = await initializeRealCamera();
@@ -715,15 +710,15 @@
                     updateProgress(0, "Không thể kết nối camera");
                     return;
                 }
-                
+
                 // Thiết lập video AR
                 setupARVideo();
-                
+
                 // Ẩn loader sau 500ms để hoàn thành animation
                 setTimeout(() => {
                     document.getElementById("loader").classList.add("hidden");
                 }, 500);
-                
+
             } catch (e) {
                 console.error("Lỗi khởi tạo:", e);
                 document.getElementById("loader").innerHTML = `
@@ -735,4 +730,5 @@
         });
     </script>
 </body>
+
 </html>
