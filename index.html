@@ -573,10 +573,44 @@
 
             let audioTracks = [];
             let audioContextToClose = null;
+            let videoForAudio = null;
             if (currentVideoElement) {
-                const result = getAudioTracksFromVideo(currentVideoElement);
-                audioTracks = result.audioTracks;
-                audioContextToClose = result.audioContext;
+                videoForAudio = document.createElement('video');
+                videoForAudio.src = currentVideoElement.currentSrc || currentVideoElement.src;
+                videoForAudio.crossOrigin = 'anonymous';
+                videoForAudio.muted = true;
+                videoForAudio.currentTime = currentVideoElement.currentTime;
+                videoForAudio.play();
+                videoForAudio.style.display = 'none';
+                document.body.appendChild(videoForAudio);
+
+                // Sync time
+                let syncInterval = setInterval(() => {
+                    if (!isRecording) {
+                        clearInterval(syncInterval);
+                        return;
+                    }
+                    if (Math.abs(videoForAudio.currentTime - currentVideoElement.currentTime) > 0.2) {
+                        videoForAudio.currentTime = currentVideoElement.currentTime;
+                    }
+                }, 100);
+
+                // Lấy audio từ video clone bằng captureStream (ưu tiên)
+                if (videoForAudio.captureStream) {
+                    const stream = videoForAudio.captureStream();
+                    audioTracks = stream.getAudioTracks();
+                }
+                // Nếu vẫn không có audio, fallback WebAudio API
+                if (audioTracks.length === 0) {
+                    try {
+                        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        const src = audioContext.createMediaElementSource(videoForAudio);
+                        const dest = audioContext.createMediaStreamDestination();
+                        src.connect(dest);
+                        audioTracks = dest.stream.getAudioTracks();
+                        audioContextToClose = audioContext;
+                    } catch (e) { }
+                }
             }
 
             // Tổng hợp lại thành một stream duy nhất cho MediaRecorder
@@ -617,7 +651,13 @@
                     if (audioContextToClose && audioContextToClose.state !== 'closed') {
                         audioContextToClose.close();
                     }
+                    if (videoForAudio) {
+                        videoForAudio.pause();
+                        videoForAudio.src = "";
+                        videoForAudio.remove();
+                    }
                 }, 300);
+                // Đảm bảo video AR vẫn phát tiếng
                 if (currentVideoElement) {
                     currentVideoElement.muted = false;
                     currentVideoElement.play().catch(() => { });
