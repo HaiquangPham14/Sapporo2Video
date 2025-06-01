@@ -521,9 +521,9 @@
             });
         }
 
-        function getOrCreateMediaSourceFor(video, audioCtx) {
+        function getOrCreateMediaSourceFor(video, audioContext) {
             if (videoAudioSources.has(video)) return videoAudioSources.get(video);
-            const src = audioCtx.createMediaElementSource(video);
+            const src = audioContext.createMediaElementSource(video);
             videoAudioSources.set(video, src);
             return src;
         }
@@ -531,11 +531,12 @@
         function startRecording() {
             const realCamera = document.getElementById("real-camera-video");
             if (!arScene || !arScene.renderer || !arScene.renderer.domElement || !realCamera.videoWidth) {
-                showNotification("Chưa sẵn sàng, thử lại sau!");
+                alert("Chưa sẵn sàng, thử lại sau!");
                 return;
             }
             const arCanvas = arScene.renderer.domElement;
 
+            // Tạo canvas ghi hình ảnh như cũ
             const combinedCanvas = document.createElement("canvas");
             combinedCanvas.width = arCanvas.width;
             combinedCanvas.height = arCanvas.height;
@@ -543,44 +544,29 @@
 
             const videoStream = combinedCanvas.captureStream(30);
 
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const destination = audioContext.createMediaStreamDestination();
-
-            let hasAudio = false;
-            if (currentVideoElement && !currentVideoElement.paused && !currentVideoElement.muted) {
-                try {
-                    currentVideoElement.play().catch(e => console.error("Error playing video:", e));
-                    const src = getOrCreateMediaSourceFor(currentVideoElement, audioContext);
-                    src.connect(destination);
-                    src.connect(audioContext.destination);
-                    hasAudio = true;
-                } catch (e) {
-                    console.error('Audio connection error:', e);
-                }
-            } else {
-                console.warn("No active AR video or video is muted/paused");
+            let audioTracks = [];
+            if (currentVideoElement && currentVideoElement.captureStream) {
+                const videoCloneStream = currentVideoElement.captureStream();
+                audioTracks = videoCloneStream.getAudioTracks();
             }
 
-            const tracks = [...videoStream.getVideoTracks()];
-            if (hasAudio) {
-                tracks.push(...destination.stream.getAudioTracks());
-            } else {
-                console.warn("No audio track added to recording");
-            }
+            // Tổng hợp lại thành một stream duy nhất cho MediaRecorder
+            const tracks = [...videoStream.getVideoTracks(), ...audioTracks];
             const finalStream = new MediaStream(tracks);
 
-            let options = { mimeType: 'video/webm;codecs=vp9,opus' };
+            let options = { mimeType: 'video/webm' };
             if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1.42E01E,mp4a.40.2')) {
                 options.mimeType = 'video/mp4;codecs=avc1.42E01E,mp4a.40.2';
-            } else if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                options.mimeType = 'video/webm;codecs=vp8,opus';
+            } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
+                options.mimeType = 'video/webm;codecs=vp9';
+            } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) {
+                options.mimeType = 'video/webm;codecs=vp8';
             }
 
             try {
                 mediaRecorder = new MediaRecorder(finalStream, options);
             } catch (e) {
-                showNotification('Không thể bắt đầu quay video. Vui lòng thử lại!');
-                console.error('MediaRecorder initialization error:', e);
+                alert('Không thể bắt đầu quay video. Vui lòng thử lại!');
                 return;
             }
 
@@ -598,21 +584,19 @@
                 const filename = `sapporo-video-${Date.now()}.${ext}`;
                 saveFile(blob, filename);
                 recordedChunks = [];
-                if (audioContext && audioContext.state !== 'closed') {
-                    audioContext.close();
-                }
             };
 
+            // Start recording
             mediaRecorder.start();
             isRecording = true;
 
+            // Draw frames liên tục
             function drawFrame() {
                 if (!isRecording) return;
                 ctx.drawImage(realCamera, 0, 0, combinedCanvas.width, combinedCanvas.height);
                 ctx.drawImage(arCanvas, 0, 0, combinedCanvas.width, combinedCanvas.height);
                 requestAnimationFrame(drawFrame);
             }
-
             drawFrame();
         }
 
@@ -620,7 +604,6 @@
             if (mediaRecorder && isRecording) {
                 mediaRecorder.stop();
                 isRecording = false;
-                mediaRecorder = null; // Reset mediaRecorder to prevent issues
             }
         }
 
@@ -638,12 +621,13 @@
 
             target.addEventListener("targetFound", () => {
                 isTargetVisible = true;
-                videoPlane.setAttribute("muted", "false");
+                muted = false;
                 document.getElementById("video-selection").classList.remove("hidden");
             });
 
             target.addEventListener("targetLost", () => {
                 isTargetVisible = false;
+                muted = true;
                 if (currentVideoElement) {
                     currentVideoElement.pause();
                     currentVideoElement.currentTime = 0;
@@ -681,10 +665,9 @@
 
             selectedVideoId = videoId;
             currentVideoElement = videoElement;
-            activeVideos.add(videoElement); // Add to activeVideos for audio capture
+            activeVideos.add(videoElement);
             videoPlane.setAttribute("src", `#${videoId}`);
             videoPlane.setAttribute("visible", "true");
-            videoPlane.setAttribute("muted", "false");
             videoElement.play().catch(e => {
                 console.log("Cần tương tác để phát video:", e);
                 showNotification("Vui lòng tương tác để phát video");
