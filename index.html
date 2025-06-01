@@ -389,14 +389,15 @@
         let currentVideoElement;
         let selectedVideoId = null;
         let isTargetVisible = false;
-        //camera
         let isRecording = false;
         let mediaRecorder;
         let recordedChunks = [];
         let pressTimer;
         let arScene;
+        let cameraStream;
+        let audioContext;
         let activeVideos = new Set();
-
+        const videoAudioSources = new Map();
 
         document.addEventListener("DOMContentLoaded", () => {
             particlesJS('particles-js', {
@@ -427,7 +428,6 @@
             const btn = document.getElementById('camera-button');
             const statusText = document.getElementById('status-text');
 
-            // Touch and mouse events
             btn.addEventListener('touchstart', handlePressStart);
             btn.addEventListener('mousedown', handlePressStart);
             btn.addEventListener('touchend', handlePressEnd);
@@ -469,7 +469,7 @@
         }
 
         function setupARScene() {
-            const arScene = document.querySelector('a-scene');
+            arScene = document.querySelector('a-scene');
             arScene.addEventListener('loaded', () => {
                 console.log('AR Scene loaded');
                 setupTargetEvents();
@@ -479,16 +479,16 @@
         async function setupRealCamera() {
             const video = document.getElementById("real-camera-video");
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({
+                cameraStream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: "environment" },
                     audio: false
                 });
-                video.srcObject = stream;
+                video.srcObject = cameraStream;
                 await video.play();
                 console.log('Real camera initialized');
             } catch (error) {
                 console.error("Error accessing camera:", error);
-                alert("Không thể truy cập camera: " + error.message);
+                showNotification("Không thể truy cập camera: " + error.message);
             }
         }
 
@@ -496,23 +496,19 @@
             const realCamera = document.getElementById("real-camera-video");
             const screenshotCanvas = document.getElementById("screenshot-canvas");
             if (!arScene || !arScene.renderer || !arScene.renderer.domElement || !realCamera.videoWidth) {
-                alert("Chưa sẵn sàng, thử lại sau!");
+                showNotification("Chưa sẵn sàng, thử lại sau!");
                 return;
             }
             const arCanvas = arScene.renderer.domElement;
 
             requestAnimationFrame(() => {
-                // Set canvas size to match AR canvas
                 screenshotCanvas.width = arCanvas.width;
                 screenshotCanvas.height = arCanvas.height;
                 const ctx = screenshotCanvas.getContext('2d');
 
-                // Draw the real camera feed as background
                 ctx.drawImage(realCamera, 0, 0, screenshotCanvas.width, screenshotCanvas.height);
-                // Draw the AR content on top
                 ctx.drawImage(arCanvas, 0, 0, screenshotCanvas.width, screenshotCanvas.height);
 
-                // Download the image
                 const link = document.createElement('a');
                 link.download = `sapporo-ar-${Date.now()}.png`;
                 link.href = screenshotCanvas.toDataURL('image/png');
@@ -525,11 +521,9 @@
             });
         }
 
-        const videoAudioSources = new Map();
-
-        function getOrCreateMediaSourceFor(video, audioContext) {
+        function getOrCreateMediaSourceFor(video, audioCtx) {
             if (videoAudioSources.has(video)) return videoAudioSources.get(video);
-            const src = audioContext.createMediaElementSource(video);
+            const src = audioCtx.createMediaElementSource(video);
             videoAudioSources.set(video, src);
             return src;
         }
@@ -537,12 +531,11 @@
         function startRecording() {
             const realCamera = document.getElementById("real-camera-video");
             if (!arScene || !arScene.renderer || !arScene.renderer.domElement || !realCamera.videoWidth) {
-                alert("Chưa sẵn sàng, thử lại sau!");
+                showNotification("Chưa sẵn sàng, thử lại sau!");
                 return;
             }
             const arCanvas = arScene.renderer.domElement;
 
-            // Tạo canvas tạm để vẽ frame ghép
             const combinedCanvas = document.createElement("canvas");
             combinedCanvas.width = arCanvas.width;
             combinedCanvas.height = arCanvas.height;
@@ -550,41 +543,44 @@
 
             const videoStream = combinedCanvas.captureStream(30);
 
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const destination = audioContext.createMediaStreamDestination();
 
             let hasAudio = false;
-            activeVideos.forEach(video => {
-                if (!video.paused && !video.muted) {
-                    try {
-                        const src = getOrCreateMediaSourceFor(video, audioContext);
-                        src.connect(destination);
-                        src.connect(audioContext.destination);
-                        hasAudio = true;
-                    } catch (e) {
-                        console.log('Audio connection error:', e);
-                    }
+            if (currentVideoElement && !currentVideoElement.paused && !currentVideoElement.muted) {
+                try {
+                    currentVideoElement.play().catch(e => console.error("Error playing video:", e));
+                    const src = getOrCreateMediaSourceFor(currentVideoElement, audioContext);
+                    src.connect(destination);
+                    src.connect(audioContext.destination);
+                    hasAudio = true;
+                } catch (e) {
+                    console.error('Audio connection error:', e);
                 }
-            });
+            } else {
+                console.warn("No active AR video or video is muted/paused");
+            }
 
-            // Tổng hợp track video + audio
             const tracks = [...videoStream.getVideoTracks()];
-            if (hasAudio) tracks.push(...destination.stream.getAudioTracks());
+            if (hasAudio) {
+                tracks.push(...destination.stream.getAudioTracks());
+            } else {
+                console.warn("No audio track added to recording");
+            }
             const finalStream = new MediaStream(tracks);
 
-            let options = { mimeType: 'video/webm' };
+            let options = { mimeType: 'video/webm;codecs=vp9,opus' };
             if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1.42E01E,mp4a.40.2')) {
                 options.mimeType = 'video/mp4;codecs=avc1.42E01E,mp4a.40.2';
-            } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
-                options.mimeType = 'video/webm;codecs=vp9';
-            } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) {
-                options.mimeType = 'video/webm;codecs=vp8';
+            } else if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                options.mimeType = 'video/webm;codecs=vp8,opus';
             }
 
             try {
                 mediaRecorder = new MediaRecorder(finalStream, options);
             } catch (e) {
-                alert('Không thể bắt đầu quay video. Vui lòng thử lại!');
+                showNotification('Không thể bắt đầu quay video. Vui lòng thử lại!');
+                console.error('MediaRecorder initialization error:', e);
                 return;
             }
 
@@ -602,14 +598,14 @@
                 const filename = `sapporo-video-${Date.now()}.${ext}`;
                 saveFile(blob, filename);
                 recordedChunks = [];
-                if (audioContext && audioContext.state !== 'closed') audioContext.close();
+                if (audioContext && audioContext.state !== 'closed') {
+                    audioContext.close();
+                }
             };
 
-            // Start recording
             mediaRecorder.start();
             isRecording = true;
 
-            // Draw frames liên tục
             function drawFrame() {
                 if (!isRecording) return;
                 ctx.drawImage(realCamera, 0, 0, combinedCanvas.width, combinedCanvas.height);
@@ -624,18 +620,8 @@
             if (mediaRecorder && isRecording) {
                 mediaRecorder.stop();
                 isRecording = false;
+                mediaRecorder = null; // Reset mediaRecorder to prevent issues
             }
-        }
-
-        function dataURLtoBlob(dataURL) {
-            const byteString = atob(dataURL.split(',')[1]);
-            const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
-            const ab = new ArrayBuffer(byteString.length);
-            const ia = new Uint8Array(ab);
-            for (let i = 0; i < byteString.length; i++) {
-                ia[i] = byteString.charCodeAt(i);
-            }
-            return new Blob([ab], { type: mimeString });
         }
 
         function saveFile(blob, filename) {
@@ -643,6 +629,7 @@
             link.href = URL.createObjectURL(blob);
             link.download = filename;
             link.click();
+            URL.revokeObjectURL(link.href);
         }
 
         function setupTargetEvents() {
@@ -651,6 +638,7 @@
 
             target.addEventListener("targetFound", () => {
                 isTargetVisible = true;
+                videoPlane.setAttribute("muted", "false");
                 document.getElementById("video-selection").classList.remove("hidden");
             });
 
@@ -659,6 +647,7 @@
                 if (currentVideoElement) {
                     currentVideoElement.pause();
                     currentVideoElement.currentTime = 0;
+                    activeVideos.delete(currentVideoElement);
                 }
                 selectedVideoId = null;
                 videoPlane.setAttribute("visible", "false");
@@ -687,13 +676,19 @@
             if (currentVideoElement) {
                 currentVideoElement.pause();
                 currentVideoElement.currentTime = 0;
+                activeVideos.delete(currentVideoElement);
             }
 
             selectedVideoId = videoId;
             currentVideoElement = videoElement;
+            activeVideos.add(videoElement); // Add to activeVideos for audio capture
             videoPlane.setAttribute("src", `#${videoId}`);
             videoPlane.setAttribute("visible", "true");
-            videoElement.play().catch(e => console.log("Cần tương tác để phát video:", e));
+            videoPlane.setAttribute("muted", "false");
+            videoElement.play().catch(e => {
+                console.log("Cần tương tác để phát video:", e);
+                showNotification("Vui lòng tương tác để phát video");
+            });
             document.getElementById("video-selection").classList.add("hidden");
         }
 
