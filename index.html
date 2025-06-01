@@ -542,6 +542,7 @@
                 const src = audioContext.createMediaElementSource(videoElement);
                 const dest = audioContext.createMediaStreamDestination();
                 src.connect(dest);
+                src.connect(audioContext.destination);
                 // Đừng connect vào audioContext.destination
                 return { audioTracks: dest.stream.getAudioTracks(), audioContext };
             } catch (e) {
