@@ -521,6 +521,12 @@
             });
         }
 
+        // function getOrCreateMediaSourceFor(video, audioContext) {
+        //     if (videoAudioSources.has(video)) return videoAudioSources.get(video);
+        //     const src = audioContext.createMediaElementSource(video);
+        //     videoAudioSources.set(video, src);
+        //     return src;
+        // }
         function getAudioTracksFromVideo(videoElement) {
             // 1. Thử captureStream trước (desktop & Android mới)
             if (videoElement.captureStream) {
@@ -542,7 +548,6 @@
                 return { audioTracks: [], audioContext: null };
             }
         }
-
         function startRecording() {
             const realCamera = document.getElementById("real-camera-video");
             if (!arScene || !arScene.renderer || !arScene.renderer.domElement || !realCamera.videoWidth) {
@@ -559,10 +564,18 @@
 
             const videoStream = combinedCanvas.captureStream(30);
 
+            // let audioTracks = [];
+            // if (currentVideoElement && currentVideoElement.captureStream) {
+            //     const videoCloneStream = currentVideoElement.captureStream();
+            //     audioTracks = videoCloneStream.getAudioTracks();
+            // }
+
             let audioTracks = [];
-            if (currentVideoElement && currentVideoElement.captureStream) {
-                const videoCloneStream = currentVideoElement.captureStream();
-                audioTracks = videoCloneStream.getAudioTracks();
+            let audioContextToClose = null;
+            if (currentVideoElement) {
+                const result = getAudioTracksFromVideo(currentVideoElement);
+                audioTracks = result.audioTracks;
+                audioContextToClose = result.audioContext;
             }
 
             // Tổng hợp lại thành một stream duy nhất cho MediaRecorder
@@ -599,6 +612,15 @@
                 const filename = `sapporo-video-${Date.now()}.${ext}`;
                 saveFile(blob, filename);
                 recordedChunks = [];
+                setTimeout(() => {
+                    if (audioContextToClose && audioContextToClose.state !== 'closed') {
+                        audioContextToClose.close();
+                    }
+                }, 300);
+                if (currentVideoElement) {
+                    currentVideoElement.muted = false;
+                    currentVideoElement.play().catch(() => { });
+                }
             };
 
             // Start recording
