@@ -507,7 +507,25 @@
                 screenshotCanvas.height = arCanvas.height;
                 const ctx = screenshotCanvas.getContext('2d');
 
-                ctx.drawImage(realCamera, 0, 0, screenshotCanvas.width, screenshotCanvas.height);
+                const videoAspect = realCamera.videoWidth / realCamera.videoHeight;
+                const canvasAspect = screenshotCanvas.width / screenshotCanvas.height;
+
+                let drawWidth, drawHeight, offsetX, offsetY;
+
+                if (videoAspect > canvasAspect) {
+                    drawHeight = screenshotCanvas.height;
+                    drawWidth = realCamera.videoWidth * (drawHeight / realCamera.videoHeight);
+                    offsetX = (screenshotCanvas.width - drawWidth) / 2;
+                    offsetY = 0;
+                } else {
+                    drawWidth = screenshotCanvas.width;
+                    drawHeight = realCamera.videoHeight * (drawWidth / realCamera.videoWidth);
+                    offsetY = (screenshotCanvas.height - drawHeight) / 2;
+                    offsetX = 0;
+                }
+
+                ctx.clearRect(0, 0, screenshotCanvas.width, screenshotCanvas.height);
+                ctx.drawImage(realCamera, offsetX, offsetY, drawWidth, drawHeight);
                 ctx.drawImage(arCanvas, 0, 0, screenshotCanvas.width, screenshotCanvas.height);
 
                 const link = document.createElement('a');
