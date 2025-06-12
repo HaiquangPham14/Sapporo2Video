@@ -629,10 +629,44 @@
             isRecording = true;
 
             // Draw frames liên tục
+            // function drawFrame() {
+            //     if (!isRecording) return;
+            //     ctx.drawImage(realCamera, 0, 0, combinedCanvas.width, combinedCanvas.height);
+            //     ctx.drawImage(arCanvas, 0, 0, combinedCanvas.width, combinedCanvas.height);
+            //     requestAnimationFrame(drawFrame);
+            // }
             function drawFrame() {
                 if (!isRecording) return;
-                ctx.drawImage(realCamera, 0, 0, combinedCanvas.width, combinedCanvas.height);
+
+                // Tính toán tỉ lệ để giữ nguyên aspect ratio
+                const videoAspect = realCamera.videoWidth / realCamera.videoHeight;
+                const canvasAspect = combinedCanvas.width / combinedCanvas.height;
+
+                let drawWidth, drawHeight, offsetX, offsetY;
+
+                if (videoAspect > canvasAspect) {
+                    // Video rộng hơn -> căn theo chiều cao
+                    drawHeight = combinedCanvas.height;
+                    drawWidth = realCamera.videoWidth * (drawHeight / realCamera.videoHeight);
+                    offsetX = (combinedCanvas.width - drawWidth) / 2;
+                    offsetY = 0;
+                } else {
+                    // Video cao hơn -> căn theo chiều rộng
+                    drawWidth = combinedCanvas.width;
+                    drawHeight = realCamera.videoHeight * (drawWidth / realCamera.videoWidth);
+                    offsetY = (combinedCanvas.height - drawHeight) / 2;
+                    offsetX = 0;
+                }
+
+                // Xóa canvas trước khi vẽ
+                ctx.clearRect(0, 0, combinedCanvas.width, combinedCanvas.height);
+
+                // Vẽ camera thật với kích thước đã tính toán
+                ctx.drawImage(realCamera, offsetX, offsetY, drawWidth, drawHeight);
+
+                // Vẽ AR canvas lên trên
                 ctx.drawImage(arCanvas, 0, 0, combinedCanvas.width, combinedCanvas.height);
+
                 requestAnimationFrame(drawFrame);
             }
             drawFrame();
